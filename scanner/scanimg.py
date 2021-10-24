@@ -1,8 +1,7 @@
 import os
 import time
 import subprocess
-
-dir_tmp_img = './tmp_img'
+from common.constants import tmp_scan_dir
 
 def _get_timestamp():
 	import calendar
@@ -13,6 +12,8 @@ def _get_timestamp():
 class Scanner():
 	def __init__(self, path):
 		self.path = path
+		os.makedirs(path, exist_ok=True)
+		os.makedirs(tmp_scan_dir, exist_ok=True)
 
 	def scan_image(self, date_created):
 		ts = _get_timestamp()
@@ -26,13 +27,13 @@ class Scanner():
 		return image_final
 
 	def _scan_image(self, file_name):
-		raw_file_path = os.path.join(dir_tmp_img, 'raw_%s'%(file_name))
+		raw_file_path = os.path.join(tmp_scan_dir, 'raw_%s'%(file_name))
 		cmd = "scanimage --format=jpeg > %s" % (raw_file_path)
 		subprocess.run(cmd, shell=True)
 		return raw_file_path
 
 	def _crop_image(self, file_name, raw_file):
-		processed_file_path = os.path.join(dir_tmp_img, file_name)
+		processed_file_path = os.path.join(tmp_scan_dir, file_name)
 		cmd = "convert %s -trim +repage %s" % (raw_file, processed_file_path)
 		subprocess.run(cmd, shell=True)
 		return processed_file_path

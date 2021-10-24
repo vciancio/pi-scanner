@@ -1,19 +1,12 @@
-from adafruit import Input, Display
-from scanimg import Scanner
+from .adafruit import Input, Display
+from .scanimg import Scanner
+from common.constants import upload_dir
+import scanner.fonts as fonts
+
 import os
 
 global current_year
 global is_scanning
-
-# dir_scanned_photos=os.getenv('PISCANNER_SCANNED_DIR')
-dir_scanned_photos='/home/pi/scanned_photos'
-print('dir_scanned_photos=', dir_scanned_photos)
-
-scanner = Scanner(dir_scanned_photos)
-controller = Input()
-display = Display()
-current_year = 2000
-is_scanning = False
 
 def get_ip():
     import socket
@@ -21,7 +14,7 @@ def get_ip():
     return socket.gethostbyname(hostname+'.local')
 
 def get_num_files_processing():
-    return len([name for name in os.listdir(dir_scanned_photos) if os.path.isfile('%s/%s'%(dir_scanned_photos,name))])
+    return len([name for name in os.listdir(upload_dir) if os.path.isfile('%s/%s'%(upload_dir,name))])
 
 def check_input(draw):
     global is_scanning
@@ -39,7 +32,7 @@ def check_input(draw):
     if(controller.down()):
         current_year -= 1
 
-def on_draw(draw):
+def event_loop(draw):
     global current_year
     global is_scanning
 
@@ -52,7 +45,6 @@ def on_draw(draw):
         return
 
     #### Drawing ####
-    import fonts
     check_input(draw)
     photos_to_process = get_num_files_processing()
 
@@ -80,5 +72,15 @@ def on_draw(draw):
         xy = (0, display.height/2-size/2)
         draw.text(xy, text, font=font, fill="white")
 
-    
-display.run(on_draw)
+
+if __name__ == '__main__':
+    print('Photos to Upload are stored in "%s"'%(upload_dir))
+
+    scanner = Scanner(upload_dir)
+    controller = Input()
+    display = Display()
+    current_year = 2000
+    is_scanning = False
+
+    print('Running Event Loop')
+    display.run(event_loop)
