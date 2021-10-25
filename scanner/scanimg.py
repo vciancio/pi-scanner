@@ -3,6 +3,9 @@ import time
 import calendar
 import subprocess
 from common.constants import tmp_scan_dir
+from PIL import Image, ImageChops
+
+_TRIM_ITERATIONS = 4
 
 def _get_files(folder):
 	file_list = []
@@ -37,16 +40,17 @@ class Scanner():
 		ts = _get_timestamp()
 		file_format = os.path.join(tmp_scan_dir, 'raw_'+str(ts)+'-%d.jpg')
 		self._batch_scan(file_format)
+
 		file_list = _get_files(tmp_scan_dir)
 		for image_scanned in file_list:
 			file_name = os.path.basename(image_scanned).replace("raw_", "")
-			image_cropped = self._crop_image(file_name, image_scanned)
-			os.remove(image_scanned)
-			self._set_datetime(date_created, image_cropped)
-			os.remove(image_cropped+'_original') # Created by exiftool
+			
+			self._crop_image(image_scanned)
+			self._set_datetime(date_created, image_scanned)
+			os.remove(image_scanned+'_original') # Created by exiftool
+			
 			image_final = os.path.join(self.path, file_name)
-			os.rename(image_cropped, image_final)
-
+			os.rename(image_scanned, image_final)
 
 	def _scan_image(self, file_name):
 		raw_file_path = os.path.join(tmp_scan_dir, 'raw_%s'%(file_name))
@@ -58,11 +62,23 @@ class Scanner():
 		cmd = "scanimage --format=jpeg --batch=%s"%(file_format)
 		subprocess.run(cmd, shell=True)
 
-	def _crop_image(self, file_name, raw_file):
-		processed_file_path = os.path.join(tmp_scan_dir, file_name)
-		cmd = "convert %s -trim +repage %s" % (raw_file, processed_file_path)
-		subprocess.run(cmd, shell=True)
-		return processed_file_path
+	def _crop_image(self, file):
+		cmd = "convert " + file + " -fuzz 10% -trim +repage " + file
+		for i in range(_TRIM_ITERATIONS):
+			subprocess.run(cmd, shell=True)
+
+	def _trim(self, old_file, new_file):
+		im = Image.open(old_file)
+		bg = Image.new(im.mode, im.size, im.getpixel((10,10)))
+		diff = ImageChops.difference(im, bg)
+		diff = ImageChops.add(diff, diff)
+		#Bounding box given as a 4-tuple defining the left, upper, right, and lower pixel coordinates.
+		#If the image is completely empty, this method returns None.
+		bbox = diff.getbbox()
+		print(bbox)
+		if bbox:
+		    im = im.crop(bbox)
+		im.save(new_file)
 
 	def _set_datetime(self, date_created, file):
 		cmd = 'exiftool "-DateTimeOriginal=%s:%s:%s 00:00:00" %s'\
