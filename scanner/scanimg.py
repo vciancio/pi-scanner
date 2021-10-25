@@ -5,7 +5,8 @@ import subprocess
 from common.constants import tmp_scan_dir
 from PIL import Image, ImageChops
 
-_TRIM_ITERATIONS = 4
+_TRIM_ITERATIONS = 2
+_TRIM_FUZZ = 15
 
 def _get_files(folder):
 	file_list = []
@@ -63,7 +64,7 @@ class Scanner():
 		subprocess.run(cmd, shell=True)
 
 	def _crop_image(self, file):
-		cmd = "convert " + file + " -fuzz 10% -trim +repage " + file
+		cmd = "convert " + file + " -fuzz " + str(_TRIM_FUZZ) + "% -trim +repage " + file
 		for i in range(_TRIM_ITERATIONS):
 			subprocess.run(cmd, shell=True)
 
