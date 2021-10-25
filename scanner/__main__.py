@@ -1,12 +1,14 @@
 from .adafruit import Input, Display
 from .scanimg import Scanner
-from common.constants import upload_dir
+from common.config import Config
 import scanner.fonts as fonts
 
 import os
 
 global current_year
 global is_scanning
+
+upload_dir = Config.DIR_SCANNED_PHOTOS
 
 def get_ip():
     import socket
@@ -39,7 +41,7 @@ def event_loop(draw):
     #### Actions ####
     if is_scanning:
         from datetime import date
-        d = date(current_year, 1, 1)
+        d = date(current_year, 1, 2)
         scanner.scan_image(d)
         is_scanning = False
         return
