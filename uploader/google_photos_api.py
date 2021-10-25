@@ -7,7 +7,6 @@ def _gen_media_items(map_token_file):
 		file = map_token_file[token]
 		file_name = os.path.basename(file)
 		media_items.append({
-			'description': 'Scanned by Pi-Scanner',
 			'simpleMediaItem': {
 				'fileName': file_name,
 				'uploadToken': token
