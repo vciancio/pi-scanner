@@ -39,5 +39,6 @@ class Scanner():
 		return processed_file_path
 
 	def _set_datetime(self, date_created, file_name):
-		cmd = 'exiftool "-DateTimeOriginal=%s:1:1 00:00:00" %s'%(date_created.year, file_name)
+		cmd = 'exiftool "-DateTimeOriginal=%s:%s:%s 00:00:00" %s'\
+			%(date_created.year, date_created.month, date_created.day, file_name)
 		subprocess.run(cmd, shell=True)
