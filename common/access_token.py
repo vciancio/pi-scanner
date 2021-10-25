@@ -5,15 +5,19 @@ _file = os.path.join(_path, 'access_token')
 
 def save(token):
 	os.makedirs(_path, exist_ok=True)
-	f = open(_file, "w")
-	f.write(token)
-	f.close()
+	try:
+		f = open(_file, "w")
+		f.write(token)
+	finally:
+		f.close()
 
 def read():
 	if not exists(_file):
 		return ''
 	os.makedirs(_path, exist_ok=True)
-	f = open(_file, "r")
-	token = f.read()
-	f.close()
-	return token
+	try:
+		f = open(_file, "r")
+		token = f.read()
+		return token
+	finally:
+		f.close()
