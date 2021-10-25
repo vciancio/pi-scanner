@@ -42,7 +42,7 @@ def event_loop(draw):
     if is_scanning:
         from datetime import date
         d = date(current_year, 1, 2)
-        scanner.scan_image(d)
+        scanner.batch_scan(d)
         is_scanning = False
         return
 
