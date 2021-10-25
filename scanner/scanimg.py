@@ -6,7 +6,7 @@ from common.constants import tmp_scan_dir
 from PIL import Image, ImageChops
 
 _TRIM_ITERATIONS = 2
-_TRIM_FUZZ = 15
+_TRIM_FUZZ = 20
 
 def _get_files(folder):
 	file_list = []
