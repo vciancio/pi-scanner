@@ -32,7 +32,7 @@ def upload_photos(api, photo_list):
 if __name__ == '__main__':
 	while(True):
 		expired_time = access_token.get_expired_time()
-		if expired_time < time.time():
+		if int(expired_time) < time.time():
 			access_token.clear()
 			time.sleep(10)
 			continue
