@@ -5,10 +5,17 @@ import scanner.fonts as fonts
 
 import os
 
+MONTHS = ["Jan", "Feb", "Mar", "Aprl", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"]
+PADDING_VERT = 5
+PADDING_HORIZ = 5
+
+global current_selection # year=0, month=1
+global current_month
 global current_year
 global is_scanning
 
 upload_dir = Config.DIR_SCANNED_PHOTOS
+
 
 def get_ip():
     import socket
@@ -21,6 +28,8 @@ def get_num_files_processing():
 def check_input(draw):
     global is_scanning
     global current_year
+    global current_month
+    global current_selection
 
     if is_scanning:
         return
@@ -29,19 +38,35 @@ def check_input(draw):
         is_scanning = True
         return
 
+    modifier = 0
     if(controller.up()):
-        current_year += 1
-    if(controller.down()):
-        current_year -= 1
+        modifier = 1
+    elif(controller.down()):
+        modifier = -1
+
+    if current_selection == 0:
+        current_year += modifier
+    elif current_selection == 1:
+        month = current_month + modifier
+        if(0 <= month and month <= 12):
+            current_month = month
+
+    if(controller.left() and current_selection == 1):
+        current_selection = 0
+    elif(controller.right() and current_selection == 0):
+        current_selection = 1
+
 
 def event_loop(draw):
     global current_year
+    global current_month
     global is_scanning
+    global current_selection
 
     #### Actions ####
     if is_scanning:
         from datetime import date
-        d = date(current_year, 1, 2)
+        d = date(current_year, current_month+1, 2)
         scanner.batch_scan(d)
         is_scanning = False
         return
@@ -57,10 +82,30 @@ def event_loop(draw):
     draw.text(ip_xy, ip_text, font=ip_font, fill = "white")
 
     # Draw Year
-    year_text = 'Year: %s'%(current_year)
+    year_fill = "black" if current_selection == 0 else "white"
+    year_text = 'Y: %s'%(current_year)
     (year_font, year_font_size) = fonts.large()
-    year_xy = (0, 0)
-    draw.text(year_xy, year_text, font=year_font, fill = "white")
+    year_xy = (PADDING_HORIZ, 0)
+    if current_selection == 0:
+        rect_xy = (
+            (0, 0), 
+            (display.width/2, year_font_size+PADDING_VERT)
+        )
+        draw.rectangle(rect_xy, fill="white")
+    draw.text(year_xy, year_text, font=year_font, fill = year_fill)
+
+    # Draw Month
+    month_fill = "black" if current_selection == 1 else "white"
+    month_text = 'M: %s'%(MONTHS[current_month])
+    (month_font, month_font_size) = fonts.large()
+    month_xy = (display.width/2+PADDING_HORIZ, 0)
+    if current_selection == 1:
+        rect_xy = (
+            (display.width/2, 0), 
+            (display.width, month_font_size+PADDING_VERT)
+        )
+        draw.rectangle(rect_xy, fill="white")
+    draw.text(month_xy, month_text, font=month_font, fill = month_fill)
 
     # Draw Photos to Upload
     ptp_text = 'Photos to Upload: %s '%(photos_to_process)
@@ -82,7 +127,9 @@ if __name__ == '__main__':
     controller = Input()
     display = Display()
     current_year = 2000
+    current_month = 0
     is_scanning = False
+    current_selection = 0
 
     print('Running Event Loop')
     display.run(event_loop)
