@@ -64,7 +64,7 @@ class Scanner():
 		subprocess.run(cmd, shell=True)
 
 	def _crop_image(self, file):
-		cmd = "convert " + file + " -fuzz " + str(_TRIM_FUZZ) + "% -trim +repage " + file
+		cmd = "convert " + file + " -quality 100 -fuzz " + str(_TRIM_FUZZ) + "% -trim +repage " + file
 		for i in range(_TRIM_ITERATIONS):
 			subprocess.run(cmd, shell=True)
 
