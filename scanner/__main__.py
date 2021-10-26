@@ -129,7 +129,6 @@ def event_loop(draw):
     if time.time()-token_cache_time > TOKEN_CACHE_INVALIDATE:
         token = access_token.get_token()
         token_cache_time = time.time()
-        print('token=', token)
 
     if token == None or token == '':
         text = 'Login at ' + get_ip()
