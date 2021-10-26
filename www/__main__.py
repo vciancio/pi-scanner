@@ -1,6 +1,7 @@
 from flask import Flask, url_for
 from common.config import Config
 import common.access_token as access_token
+import time
 
 global api_key
 api_key = None
@@ -24,25 +25,28 @@ def auth_google_photos():
             const parsedHash = new URLSearchParams(
   				window.location.hash.substr(1) // skip the first char (#)
 			);
-            window.location = "/access_token_response/" + parsedHash.get("access_token");
+            window.location = "/access_token_response/" 
+                + parsedHash.get("expires_in") + "/" + parsedHash.get("access_token");
         </script> '''
 
-@app.route("/access_token_response/<token>/", methods=['GET'])
-def auth_token(token):
-	access_token.save(token)
+@app.route("/access_token_response/<expires_in>/<token>", methods=['GET'])
+def auth_token(token, expires_in):
+	# Offset expires time by a minute just in case we're in the middle of uploading
+	expired_time = time.time() + (int(expires_in) - 60)
+	access_token.save(token, expired_time)
 	return '''<script type="text/javascript">
 	window.location = "/";
 	</script>'''
 
 @app.route("/deauth/google-photos")
 def route_deauth_google_photos():
-	if access_token.read() == '':
+	if access_token.get_token() == '':
 		return '''<script type="text/javascript">
 			window.location = "/";
 			</script>'''
 	revokeTokenEndpoint = 'https://oauth2.googleapis.com/revoke'
-	token = access_token.read()
-	access_token.save('')
+	token = access_token.get_token()
+	access_token.clear()
 	html = "<form method='POST' name='deauth' action='%s'>"%(revokeTokenEndpoint)
 	html += "<button name='linkBtn' type='submit'>Unlink to Google Photos</button>"
 	html += "<input type='hidden' name='token' value='%s'/>"%(token)
@@ -51,7 +55,7 @@ def route_deauth_google_photos():
 	return html
 
 def render_oauth_current_token():
-	api_key = access_token.read()
+	api_key = access_token.get_token()
 	html = "<div>"
 	html += "<p>Current API Key: <i>%s</i></p>"%(api_key)
 	if(api_key == None or api_key == ''):
@@ -90,4 +94,4 @@ def render_oauth_button_deauth():
 
 if __name__ == '__main__':
 	# app.run(ssl_context=('www/ssl/fullchain.pem', 'www/ssl/privkey.pem'))
-	app.run(port=5000)
+	app.run(port=5000, debug=True)

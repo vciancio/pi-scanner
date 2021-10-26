@@ -2,20 +2,25 @@ from .adafruit import Input, Display
 from .scanimg import Scanner
 from common.config import Config
 import scanner.fonts as fonts
-
+import common.access_token as access_token
+import time
 import os
 
 MONTHS = ["Jan", "Feb", "Mar", "Aprl", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"]
 PADDING_VERT = 5
 PADDING_HORIZ = 5
+TOKEN_CACHE_INVALIDATE = 10
 
 global current_selection # year=0, month=1
 global current_month
 global current_year
 global is_scanning
+global token_cache_time
+global token
 
 upload_dir = Config.DIR_SCANNED_PHOTOS
-
+token_cache_time = 0
+token = ''
 
 def get_ip():
     import socket
@@ -24,6 +29,7 @@ def get_ip():
 
 def get_num_files_processing():
     return len([name for name in os.listdir(upload_dir) if os.path.isfile('%s/%s'%(upload_dir,name))])
+
 
 def check_input(draw):
     global is_scanning
@@ -56,12 +62,13 @@ def check_input(draw):
     elif(controller.right() and current_selection == 0):
         current_selection = 1
 
-
-def event_loop(draw):
+def event_loop(draw):    
     global current_year
     global current_month
     global is_scanning
     global current_selection
+    global token_cache_time
+    global token
 
     #### Actions ####
     if is_scanning:
@@ -118,7 +125,17 @@ def event_loop(draw):
         (font, size) = fonts.small()
         xy = (0, display.height/2-size/2)
         draw.text(xy, text, font=font, fill="white")
+    
+    if time.time()-token_cache_time > TOKEN_CACHE_INVALIDATE:
+        token = access_token.get_token()
+        token_cache_time = time.time()
+        print('token=', token)
 
+    if token == None or token == '':
+        text = 'Login at ' + get_ip()
+        (font, size) = fonts.small()
+        xy = (0, display.height/2-size/2)
+        draw.text(xy, text, font=font, fill="white")
 
 if __name__ == '__main__':
     print('Photos to Upload are stored in "%s"'%(upload_dir))

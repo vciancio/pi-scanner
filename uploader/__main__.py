@@ -31,17 +31,23 @@ def upload_photos(api, photo_list):
 
 if __name__ == '__main__':
 	while(True):
+		expired_time = access_token.get_expired_time()
+		if expired_time < time.time():
+			access_token.clear()
+			time.sleep(10)
+			continue
+
 		photo_list = get_photos_to_upload()[:50]
 		if len(photo_list) < 1:
 			print("No photos to upload")
 			time.sleep(10)
 			continue
 
-		token = access_token.read()
-
+		token = access_token.get_token()
 		# Check if we even have an access token
 		if token is None or token == '':
 			time.sleep(10)
+			continue
 
 		api = GooglePhotosApi(token)
 
