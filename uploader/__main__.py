@@ -15,6 +15,8 @@ def get_photos_to_upload():
 		photo_list.append(path)
 	return photo_list
 
+def _sleep():
+	time.sleep(10)
 
 ## returns map(photo_path : upload_token)
 def upload_photos(api, photo_list):
@@ -32,21 +34,25 @@ def upload_photos(api, photo_list):
 if __name__ == '__main__':
 	while(True):
 		expired_time = access_token.get_expired_time()
+		if expired_time is None or str(expired_time) == '':
+			_sleep()
+			continue
+
 		if int(expired_time) < time.time():
 			access_token.clear()
-			time.sleep(10)
+			_sleep()
 			continue
 
 		photo_list = get_photos_to_upload()[:50]
 		if len(photo_list) < 1:
 			print("No photos to upload")
-			time.sleep(10)
+			_sleep()
 			continue
 
 		token = access_token.get_token()
 		# Check if we even have an access token
 		if token is None or token == '':
-			time.sleep(10)
+			_sleep()
 			continue
 
 		api = GooglePhotosApi(token)
@@ -55,7 +61,7 @@ if __name__ == '__main__':
 		map_token_file = upload_photos(api, photo_list)
 		if len(map_token_file.keys()) < 1:
 			print("No uploaded photo binaries")
-			time.sleep(10)
+			_sleep()
 			continue
 
 		print("Performing Batch Create API Call")
@@ -63,4 +69,4 @@ if __name__ == '__main__':
 		for upload_token in uploaded_tokens:
 			print('deleting ', map_token_file[upload_token])
 			os.remove(map_token_file[upload_token])
-		time.sleep(10)
+		_sleep()
