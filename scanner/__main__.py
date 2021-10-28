@@ -54,7 +54,7 @@ def check_input(draw):
         current_year += modifier
     elif current_selection == 1:
         month = current_month + modifier
-        if(0 <= month and month <= 12):
+        if(0 <= month and month < 12):
             current_month = month
 
     if(controller.left() and current_selection == 1):
