@@ -3,10 +3,12 @@ import time
 import calendar
 import subprocess
 from common.constants import tmp_scan_dir
+from common.config import Config
 from PIL import Image, ImageChops
 
 _TRIM_ITERATIONS = 2
 _TRIM_FUZZ = 20
+_FORMAT = Config.PHOTO_FORMAT
 
 def _get_files(folder):
 	file_list = []
@@ -28,7 +30,7 @@ class Scanner():
 
 	def scan_image(self, date_created):
 		ts = _get_timestamp()
-		file_name = '%s.jpeg'%(ts)
+		file_name = '%s.%s'%(ts, _FORMAT)
 		image_scanned = self._scan_image(file_name)
 		image_cropped = self._crop_image(file_name, image_scanned)
 		os.remove(image_scanned)
@@ -39,34 +41,43 @@ class Scanner():
 
 	def batch_scan(self, date_created):
 		ts = _get_timestamp()
-		file_format = os.path.join(tmp_scan_dir, 'raw_'+str(ts)+'-%d.jpg')
+		file_format = os.path.join(tmp_scan_dir, 'raw_'+str(ts)+'-%d.'+_FORMAT)
 		self._batch_scan(file_format)
 
 		file_list = _get_files(tmp_scan_dir)
 		for image_scanned in file_list:
 			file_name = os.path.basename(image_scanned).replace("raw_", "")
 			
+			# Photo Manipulation
 			self._crop_image(image_scanned)
+			# self._resize(image_scanned)
+			
+			# Exif Modification
 			self._set_datetime(date_created, image_scanned)
 			os.remove(image_scanned+'_original') # Created by exiftool
 			
+			# Output
 			image_final = os.path.join(self.path, file_name)
 			os.rename(image_scanned, image_final)
 
 	def _scan_image(self, file_name):
 		raw_file_path = os.path.join(tmp_scan_dir, 'raw_%s'%(file_name))
-		cmd = "scanimage --format=jpeg > %s" % (raw_file_path)
+		cmd = "scanimage --format=%s > %s" % (_FORMAT, raw_file_path)
 		subprocess.run(cmd, shell=True)
 		return raw_file_path
 
 	def _batch_scan(self, file_format):
-		cmd = "scanimage --format=jpeg --batch=%s"%(file_format)
+		cmd = "scanimage --format=%s --batch=%s"%(_FORMAT, file_format)
 		subprocess.run(cmd, shell=True)
 
 	def _crop_image(self, file):
 		cmd = "convert " + file + " -quality 100 -fuzz " + str(_TRIM_FUZZ) + "% -trim +repage " + file
 		for i in range(_TRIM_ITERATIONS):
 			subprocess.run(cmd, shell=True)
+
+	def _resize(self, file):
+		cmd = "convert " + file + " -quality 100 -resize x750 -unsharp 0x1 " + file
+		subprocess.run(cmd, shell=True)
 
 	def _trim(self, old_file, new_file):
 		im = Image.open(old_file)
@@ -82,6 +93,20 @@ class Scanner():
 		im.save(new_file)
 
 	def _set_datetime(self, date_created, file):
-		cmd = 'exiftool "-DateTimeOriginal=%s:%s:%s 00:00:00" %s'\
-			%(date_created.year, date_created.month, date_created.day, file)
+		if _FORMAT == 'png':
+			args = ' '.join([
+				'"-PNG:CreationTime=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
+				'"-EXIF:DateTimeOriginal=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
+			])
+		elif _FORMAT == 'jpeg':
+			args = ' '.join([
+				'"-DateTimeOriginal=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day)
+			])
+		else:
+			return
+		cmd = ' '.join([
+			'exiftool',
+			args,
+			file
+		])
 		subprocess.run(cmd, shell=True)

@@ -1,3 +1,4 @@
+from common.config import Config
 import requests
 import os
 
@@ -39,7 +40,7 @@ class GooglePhotosApi:
 		headers = {
 			'Authorization'				 : 'Bearer ' + self.access_token,
 			'Content-type' 				 : 'application/octet-stream',
-			'X-Goog-Upload-Content-Type' : 'image/jpeg',
+			'X-Goog-Upload-Content-Type' : 'image/' + Config.PHOTO_FORMAT,
 			'X-Goog-Upload-Protocol' 	 : 'raw'
 		}
 		x = requests.post(url, headers=headers, data=data, timeout=60)
