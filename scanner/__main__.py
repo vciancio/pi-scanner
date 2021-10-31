@@ -130,7 +130,7 @@ def event_loop(draw):
         token = access_token.get_token()
         token_cache_time = time.time()
 
-    if token == None or token == '':
+    if not is_scanning and (token == None or token == ''):
         text = 'Login at ' + get_ip()
         (font, size) = fonts.small()
         xy = (0, display.height/2-size/2)
