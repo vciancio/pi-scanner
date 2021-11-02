@@ -94,4 +94,4 @@ def render_oauth_button_deauth():
 
 if __name__ == '__main__':
 	# app.run(ssl_context=('www/ssl/fullchain.pem', 'www/ssl/privkey.pem'))
-	app.run(port=5000, debug=True)
+	app.run(port=5000, debug=False)
