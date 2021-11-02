@@ -2,6 +2,7 @@ import os
 import time
 import calendar
 import subprocess
+from datetime import datetime
 from common.constants import tmp_scan_dir
 from common.config import Config
 from PIL import Image, ImageChops
@@ -41,7 +42,8 @@ class Scanner():
 
 	def batch_scan(self, date_created):
 		ts = _get_timestamp()
-		file_format = os.path.join(tmp_scan_dir, 'raw_'+str(ts)+'-%d.'+_FORMAT)
+		file_name_base = 'SCAN_%s%02d%02d_000000-%d'%(date_created.year, date_created.month, date_created.day, ts)
+		file_format = os.path.join(tmp_scan_dir, 'raw_'+file_name_base+'-%d.'+_FORMAT)
 		self._batch_scan(file_format)
 
 		file_list = _get_files(tmp_scan_dir)
@@ -50,11 +52,13 @@ class Scanner():
 			
 			# Photo Manipulation
 			self._crop_image(image_scanned)
-			# self._resize(image_scanned)
 			
 			# Exif Modification
 			self._set_datetime(date_created, image_scanned)
-			os.remove(image_scanned+'_original') # Created by exiftool
+			try:
+				os.remove(image_scanned+'_original') # Created by exiftool
+			except:
+				pass
 			
 			# Output
 			image_final = os.path.join(self.path, file_name)
@@ -93,20 +97,38 @@ class Scanner():
 		im.save(new_file)
 
 	def _set_datetime(self, date_created, file):
+
 		if _FORMAT == 'png':
 			args = ' '.join([
 				'"-PNG:CreationTime=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
 				'"-EXIF:DateTimeOriginal=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
+				'"-DateTimeOriginal=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
+				'"-PNG:CreateDate=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
 			])
 		elif _FORMAT == 'jpeg':
 			args = ' '.join([
-				'"-DateTimeOriginal=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day)
+				'"-DateTimeOriginal=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
+			])
+		elif _FORMAT == 'tiff':
+			now = datetime.now()
+			args = ' '.join([
+				'"-DateTimeOriginal=%s:%s:%s 00:00:00"'%(date_created.year, date_created.month, date_created.day),
+				'"-CreateDate=%s:%s:%s %s:%s:%s"'%(now.year, now.month, now.day, now.hour, now.minute, now.second)
 			])
 		else:
-			return
+			args =  ''
+		
+		if len(args) > 0:
+			cmd = ' '.join([
+				'exiftool',
+				args,
+				file
+			])
+			subprocess.run(cmd, shell=True)
+
 		cmd = ' '.join([
-			'exiftool',
-			args,
+			'touch',
+			'-t %s%s010000.11'%(date_created.year, date_created.month),
 			file
 		])
 		subprocess.run(cmd, shell=True)
