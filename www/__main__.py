@@ -9,9 +9,13 @@ api_key = None
 app = Flask(__name__)
 
 def get_internal_ip():
-    import socket
-    hostname = socket.gethostname()   
-    return socket.gethostbyname(hostname+'.local')
+    try:
+        import socket
+        hostname = socket.gethostname()   
+        return socket.gethostbyname(hostname+'.local')
+    except:
+        print("Not connected to network.")
+        return None
 
 @app.route("/", methods=['GET'])
 def home():
@@ -68,7 +72,10 @@ def render_oauth_current_token():
 def render_oauth_button_auth():
 	oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth'
 	with app.app_context():
-		redirect_url = 'https://%s.sslip.io%s'%(get_internal_ip(), url_for('auth_google_photos'))
+		internal_ip = get_internal_ip()
+		if internal_ip is None:
+			return ""
+		redirect_url = 'https://%s.sslip.io%s'%(internal_ip, url_for('auth_google_photos'))
 	params = {
 		'client_id': Config.GOOGLE_PHOTOS_CLIENT_ID,
 		'redirect_uri': redirect_url,

@@ -23,9 +23,13 @@ token_cache_time = 0
 token = ''
 
 def get_ip():
-    import socket
-    hostname = socket.gethostname()   
-    return socket.gethostbyname(hostname+'.local')
+    try:
+        import socket
+        hostname = socket.gethostname()   
+        return socket.gethostbyname(hostname+'.local')
+    except:
+        print("Not connected to network.")
+        return ""
 
 def get_num_files_processing():
     return len([name for name in os.listdir(upload_dir) if os.path.isfile('%s/%s'%(upload_dir,name))])
